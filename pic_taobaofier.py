@@ -15,38 +15,10 @@ from skimage import io
 from skimage import color as color
 from skimage import img_as_float
 
+import numpy as np
 
-def file_is_match(full_path, patterns):
-    result = False
-    for pattern in patterns:
-        result = result or fnmatch.filter([full_path], pattern)
-    return result
+from file_operator import *
 
-def find_files(directory, pattern=[]):
-    if not os.path.exists(directory):
-        raise ValueError("Directory not found {}".format(directory))
-
-    matches = []
-    subfolders = []
-    for root, dirnames, filenames in os.walk(directory):
-        print filenames
-        subfolder = root[root.find(directory) + len(directory) :]
-        print subfolder
-        for filename in filenames:
-            full_path = os.path.join(root, filename)
-            if file_is_match(full_path, pattern):
-                matches.append(os.path.join(root, filename))
-                subfolders.append(subfolder)
-    return matches, subfolders
-
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
 
 def convert_rgb(img):
     nchannel = color.guess_spatial_dimensions(img)
@@ -76,6 +48,9 @@ def resize_img(img, short_size):
     return resize(img, (height, width))
 
 def add_water_mark(img, water_mark):
+    if water_mark.size == 0:
+        return img
+
     shape = img.shape
     height = shape[0]
     width = shape[1]
@@ -99,13 +74,19 @@ def add_water_mark(img, water_mark):
     
     return img
 
-def main(folder_path, output_path):
+def main(folder_path, output_path, wartermark_file_name):
     scale = 700
-    all_img_files, subfolders = find_files(folder_path, ["*.jpg", "*.png", ".bmp"])
+    all_img_files, subfolders, _ = find_files(folder_path, ["*.jpg", "*.png", ".bmp"])
     
     print "reading warter mark"
-    water_mark_img = io.imread("./water_mark/water_mark_0.png")
-    wm = convert_rgb(water_mark_img)
+    # water_mark_img = io.imread("./water_mark/water_mark_0.png")
+    wm = np.array([])
+    try:
+        water_mark_img = io.imread(wartermark_file_name)
+        wm = convert_rgb(water_mark_img)
+    except Exception as e:
+        print "WaterMark is not Provided"
+
 
     for idx, val in enumerate(all_img_files):
         try:
@@ -143,7 +124,9 @@ if __name__ == '__main__':
                         help='the path to you want to convert')
     parser.add_argument('--output', required=True,
                         help='the path to you want to store results')
+    parser.add_argument('--watermark', required=False, default='',
+                        help='the file for watermark')
     args = parser.parse_args()
-    main(folder_path=args.input, output_path=args.output)
+    main(folder_path=args.input, output_path=args.output, wartermark_file_name=args.watermark)
 
     
