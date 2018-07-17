@@ -4,18 +4,22 @@ import os
 import subprocess
 import math
 from file_operator import *
+sys.path.append("/Users/Kisecu/Desktop/my_software/taobaofier")
 
 import Tkinter as tk
 import tkFont
 from PIL import ImageTk, Image
+import tkFileDialog
 
-# folder_path = "/Users/Kisecu/Desktop/my_software/result1/华为/3月17"
-# dest_path = "/Users/Kisecu/Desktop/my_software/bags"
+folder_path = "/Users/Kisecu/Desktop/my_software/result1/华为/4月23"
+dest_path = "/Users/Kisecu/Desktop/my_software/super_store/best_seller"
+other_path = "/Users/Kisecu/Desktop/my_software/super_store/other"
+recycle_path = "/Users/Kisecu/Desktop/my_software/super_store/recycle"
 
-folder_path = "./test/src"
-dest_path = "./test/dest/dest"
-other_path = "./test/dest/other"
-op = "cp" # cp or mv
+# folder_path = "./test/src"
+# dest_path = "./test/dest/dest"
+# other_path = "./test/dest/other"
+op = "mv" # cp or mv
 num_letters = 12
 
 # level - 1 folder
@@ -28,7 +32,7 @@ button_frame_l1 = None
 g_iter_l1 = 0
 
 # level-2 folders
-rows_l2 = 30 # number of rows 
+rows_l2 = 20 # number of rows 
 cols_l2 = 1
 folders_l2 = []
 buttons_l2 = []
@@ -43,6 +47,17 @@ reach_end = False
 msg = None
 default_msg = ":)"
 error_msg = ":("
+finish_msg = "Finish All"
+
+tk_msg_default = None
+tk_msg_err = None
+tk_msg_finish = None
+
+window = None
+
+all_img_files = None
+subfolders = None 
+all_file_names = None
 
 def get_col_num(num, rows):
     cols = int(math.ceil(float(num) / float(rows)))
@@ -66,7 +81,8 @@ def load_img(filename):
     return ImageTk.PhotoImage(img)
 
 
-def set_msg(msg_type):
+def set_msg(msg_type, msg_str=""):
+    global msg_panel
     if msg_type == "default":
         print "set to default"
         msg_panel.configure(image = tk_msg_default)
@@ -77,6 +93,11 @@ def set_msg(msg_type):
         msg_panel.configure(image = tk_msg_err)
         msg_panel.image = tk_msg_err
         msg.set(error_msg)
+    elif msg_type == "finish":
+        print "set to finish"
+        msg_panel.configure(image = tk_msg_finish)
+        msg_panel.image = tk_msg_finish
+        msg.set(finish_msg)
     else:
         msg.set(msg_type)
 
@@ -86,12 +107,12 @@ def forward_to_next_img():
     global reach_end
     # global unfinished_count_text
     if reach_end:
-        print "You have finished all images"
+        set_msg("finish")
         return
     img_iter += 1
     unfinished_count_text.set(str(len(all_img_files) - img_iter))
     if img_iter >= len(all_img_files):
-        print "You have finished all images"
+        set_msg("finish")
         reach_end = True
         return
     show_img()
@@ -146,7 +167,7 @@ def l1_button_callback(btn):
     print "pressed l1 button"
     global select_button
     global dest_path
-    msg.set(default_msg)
+    set_msg("default")
 
     if (select_button != None):
         select_button.configure(highlightbackground = "white")
@@ -157,10 +178,10 @@ def l1_button_callback(btn):
 
 def l2_button_callback(btn):
     print "pressed l2 button"    
-    msg.set(default_msg)
+    set_msg("default")
     print btn.cget("text")
     if reach_end:
-        print "finish all"
+        set_msg("finish")
         return
     img_file_path = all_img_files[img_iter]
     dest_img_file_path = os.path.join(dest_path, select_button.cget("text"), btn.cget("text"), all_file_names[img_iter])
@@ -210,7 +231,7 @@ def refresh_l2(l1_path):
 
 def l1_entry_callback(sv):
     print "l1 entry entered"
-    msg.set(default_msg)
+    set_msg("default")
     print sv.get()
     folder_name = os.path.join(dest_path, sv.get())
     if not make_dir(folder_name):
@@ -228,7 +249,7 @@ def make_l1_entry():
 
 def l2_entry_callback(sv):
     print "l2 entry entered"
-    msg.set(default_msg)
+    set_msg("default")
     print sv.get()
     r_path = os.path.join(dest_path, select_button.cget("text"))
     folder_name = os.path.join(r_path, sv.get())
@@ -257,7 +278,6 @@ def create_msg():
     global msg
     msg = tk.StringVar()
     label = tk.Message(window, textvariable = msg, width=1000)
-    msg.set(default_msg)
     label.grid(row=2, column=0, sticky=tk.N + tk.W + tk.E + tk.S)
 
 
@@ -274,18 +294,17 @@ def create_next_button():
 
 
 def move_to_other_button_callback(btn):
-    msg.set(default_msg)
+    set_msg("default")
     if reach_end:
-        print "finish all"
+        set_msg("finish")
         return
     img_file_path = all_img_files[img_iter]
     dest_img_file_path = os.path.join(other_path, all_file_names[img_iter])
-    dest_img_file_path = dest_img_file_path.replace(" ", "\\ ")
-    print dest_img_file_path
     if do_excution(img_file_path, dest_img_file_path):
         forward_to_next_img()
     else:
         set_msg("error")
+
 
 def create_move_to_other_button():
     button = tk.Button(window, text="Move to Other")
@@ -293,36 +312,79 @@ def create_move_to_other_button():
     button.configure(command=lambda btn=button: move_to_other_button_callback(btn))
 
 
-
-all_img_files, subfolders, all_file_names = find_files(folder_path, ["*.jpg", "*.png", ".bmp"])
-print all_file_names
-img_iter = 0
-
-#This creates the main window of an application
-window = tk.Tk()
-window.title("Picture Mover")
-window.geometry("1024x720")
-
-#The Label widget is a standard Tkinter widget used to display a text or image on the screen.
-panel = tk.Label(window)
-panel.grid(row=0,column=0)
-show_img()
-
-refresh_l1()
-create_count()
-create_msg()
-create_next_button()
-create_move_to_other_button()
-
-tk_msg_default = load_img("./icon/good.jpg")
-tk_msg_err = load_img("./icon/error.jpg")
-msg_panel = tk.Label(window)
-msg_panel.grid(row=5,column=0)
-set_msg("default")
+def recycle_button_callback(btn):
+    set_msg("default")
+    if reach_end:
+        set_msg("finish")
+        return
+    img_file_path = all_img_files[img_iter]
+    dest_img_file_path = os.path.join(recycle_path, all_file_names[img_iter])
+    if do_excution(img_file_path, dest_img_file_path):
+        forward_to_next_img()
+    else:
+        set_msg("error")
 
 
-#Start the GUI
-window.mainloop()
+def create_recycle_button():
+    button = tk.Button(window, text="Recycle")
+    button.grid(row=5, column=0, sticky=tk.N + tk.W + tk.E + tk.S)
+    button.configure(command=lambda btn=button: recycle_button_callback(btn))
+
+
+def open_folder():
+    global folder_path
+    folder_path = tkFileDialog.askdirectory()
+    print folder_path
+    runGUI()
+
+def init_window():
+    global window
+    window = tk.Tk()
+    window.title("Picture Mover")
+    window.geometry("1024x720")
+
+    menubar = tk.Menu(window)
+    filemenu = tk.Menu(menubar, tearoff=0)
+    filemenu.add_command(label="Open", command=open_folder)
+    menubar.add_cascade(label="Folder", menu=filemenu)
+    window.config(menu=menubar)
+    #Start the GUI
+    window.mainloop()
+
+def runGUI():
+    global window, all_img_files, subfolders, all_file_names, img_iter, panel, tk_msg_default, tk_msg_err, tk_msg_finish, msg_panel
+    all_img_files, subfolders, all_file_names = find_files(folder_path, ["*.jpg", "*.png", ".bmp"])
+    print all_file_names
+    img_iter = 0
+
+
+    #This creates the main window of an application
+
+    #The Label widget is a standard Tkinter widget used to display a text or image on the screen.
+    panel = tk.Label(window)
+    panel.grid(row=0,column=0)
+    show_img()
+
+    create_count()
+    create_msg()
+
+    tk_msg_default = load_img("./icon/good.jpg")
+    tk_msg_err = load_img("./icon/error.jpg")
+    tk_msg_finish = load_img("./icon/finish_all.jpg")
+    msg_panel = tk.Label(window)
+    msg_panel.grid(row=6,column=0)
+    set_msg("default")
+
+    refresh_l1()
+    create_next_button()
+    create_move_to_other_button()
+    create_recycle_button()
+
+    window.update()
+    #Start the GUI
+    # window.mainloop()
+
+init_window()
 
 # def main():
 

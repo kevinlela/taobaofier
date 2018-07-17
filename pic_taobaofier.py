@@ -7,7 +7,6 @@ import errno
 import traceback    
 import sys
 import random
-sys.path.append("/Users/Kisecu/Library/Python/2.7/bin")
 
 from skimage import data
 from skimage.transform import resize
