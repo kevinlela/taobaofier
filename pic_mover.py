@@ -8,12 +8,12 @@ import Tkinter as tk
 import tkFont
 from PIL import ImageTk, Image
 
-folder_path = "./test/src/"
-dest_path = "./test/dest"
+folder_path = "/Users/Kisecu/Desktop/my_software/result1/华为/3月17"
+dest_path = "/Users/Kisecu/Desktop/my_software/bags"
+
 all_img_files, subfolders, all_file_names = find_files(folder_path, ["*.jpg", "*.png", ".bmp"])
 print all_file_names
 img_iter = 0
-
 
 #This creates the main window of an application
 window = tk.Tk()
@@ -45,7 +45,7 @@ button_frame_l1 = None
 g_iter_l1 = 0
 
 # level-2 folders
-rows_l2 = 3 # number of rows 
+rows_l2 = 30 # number of rows 
 cols_l2 = 1
 folders_l2 = []
 buttons_l2 = []
