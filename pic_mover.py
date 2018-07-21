@@ -8,7 +8,7 @@ sys.path.append("/Users/Kisecu/Desktop/my_software/taobaofier")
 
 import Tkinter as tk
 import tkFont
-from PIL import ImageTk, Image
+from PIL import ImageTk, Image, ImageColor
 import tkFileDialog
 
 folder_path = "/Users/Kisecu/Desktop/my_software/result1/华为/4月23"
@@ -59,9 +59,13 @@ all_img_files = None
 subfolders = None 
 all_file_names = None
 
+cover_panel = None
+tk_empty_image = None
+
 def get_col_num(num, rows):
     cols = int(math.ceil(float(num) / float(rows)))
     return 1 if cols == 0 else cols
+
 
 def get_rc_index(num, r_n):
     r = num % r_n 
@@ -70,14 +74,17 @@ def get_rc_index(num, r_n):
 
 
 def show_img():
-    tk_img = load_img(all_img_files[img_iter])
+    if img_iter < len(all_img_files):
+        tk_img = load_img(all_img_files[img_iter])
+    else:
+        tk_img = tk_empty_image
     panel.configure(image = tk_img)
     panel.image = tk_img
 
 
-def load_img(filename):
+def load_img(filename, width = 250, height = 250):
     img = Image.open(filename)
-    img = img.resize((250, 250), Image.ANTIALIAS)
+    img = img.resize((width, height), Image.ANTIALIAS)
     return ImageTk.PhotoImage(img)
 
 
@@ -117,6 +124,7 @@ def forward_to_next_img():
         return
     show_img()
 
+
 def do_excution(src_file, dest_file):
     if os.path.isfile(dest_file):
         idx = 1
@@ -134,6 +142,7 @@ def do_excution(src_file, dest_file):
         print "Error, cannot operate file"
         return False
     return True
+
 
 def make_dir(dir_name):
     if subprocess.call(['mkdir', dir_name]):
@@ -247,6 +256,7 @@ def make_l1_entry():
     l1_entry.configure(textvariable=sv)
     l1_entry.bind('<Return>', (lambda _: l1_entry_callback(l1_entry)))
 
+
 def l2_entry_callback(sv):
     print "l2 entry entered"
     set_msg("default")
@@ -256,6 +266,7 @@ def l2_entry_callback(sv):
     if not make_dir(folder_name):
         set_msg("error")
     refresh_l2(r_path)
+
 
 def make_l2_entry():
     sv = tk.StringVar()
@@ -286,6 +297,7 @@ def next_button_callback(btn):
     set_msg("default")
     forward_to_next_img()
     return
+
 
 def create_next_button():
     button = tk.Button(window, text="Next")
@@ -338,7 +350,7 @@ def open_folder():
     runGUI()
 
 def init_window():
-    global window
+    global window, cover_panel
     window = tk.Tk()
     window.title("Picture Mover")
     window.geometry("1024x720")
@@ -348,16 +360,23 @@ def init_window():
     filemenu.add_command(label="Open", command=open_folder)
     menubar.add_cascade(label="Folder", menu=filemenu)
     window.config(menu=menubar)
+
+    tk_cover_image = load_img("./icon/cover_1.jpg", width=1024, height=720)
+    cover_panel = tk.Label(window)
+    cover_panel.grid(row=0,column=0)
+    cover_panel.configure(image = tk_cover_image)
+    cover_panel.image = tk_cover_image
+
     #Start the GUI
     window.mainloop()
 
 def runGUI():
-    global window, all_img_files, subfolders, all_file_names, img_iter, panel, tk_msg_default, tk_msg_err, tk_msg_finish, msg_panel
+    global window, all_img_files, subfolders, all_file_names, img_iter, panel, tk_msg_default, tk_msg_err, tk_msg_finish, msg_panel, tk_empty_image
     all_img_files, subfolders, all_file_names = find_files(folder_path, ["*.jpg", "*.png", ".bmp"])
     print all_file_names
     img_iter = 0
 
-
+    cover_panel.destroy();
     #This creates the main window of an application
 
     #The Label widget is a standard Tkinter widget used to display a text or image on the screen.
@@ -371,6 +390,8 @@ def runGUI():
     tk_msg_default = load_img("./icon/good.jpg")
     tk_msg_err = load_img("./icon/error.jpg")
     tk_msg_finish = load_img("./icon/finish_all.jpg")
+    empty_image = Image.new("RGB", (250, 250), ImageColor.getrgb("white"))
+    tk_empty_image = ImageTk.PhotoImage(empty_image)
     msg_panel = tk.Label(window)
     msg_panel.grid(row=6,column=0)
     set_msg("default")
@@ -381,6 +402,8 @@ def runGUI():
     create_recycle_button()
 
     window.update()
+    window.mainloop()
+
     #Start the GUI
     # window.mainloop()
 
